@@ -1,0 +1,7 @@
+﻿Build started...
+1>------ Build started: Project: Car, Configuration: Debug Win32 ------
+1>main.cpp
+1>C:\Users\schug\source\repos\UML\Car\main.cpp(171,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
+1>Car.vcxproj -> C:\Users\schug\source\repos\UML\Debug\Car.exe
+1>Done building project "Car.vcxproj".
+========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
