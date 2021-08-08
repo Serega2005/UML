@@ -1,11 +1,11 @@
 ﻿#include<iostream>
-#include<thread>
 #include<conio.h>
+#include<thread>
 using namespace std;
 using namespace std::literals::chrono_literals;
 
-const unsigned int MIN_FUEL_LEVEL = 5;
 const unsigned int DEFAULT_TANK_VOLUME = 60;
+const unsigned int MIN_FUEL_LEVEL = 5;
 const double DEFAULT_ENGINE_CONSUMPTION = 8;
 const unsigned int DEFAULT_MAX_SPEED = 250;
 const unsigned int DEFAULT_ACCELLERATION = 10;
@@ -14,7 +14,7 @@ enum Keys
 {
 	Escape = 27,
 	Enter = 13,
-	Spase = 32,
+	Space = 32,
 	ArrowUp = 72,
 	ArrowDown = 80,
 	ArrowLeft = 75,
@@ -81,7 +81,7 @@ public:
 	{
 		return consumtion_per_second;
 	}
-	void set_consumtion_per_second(double consumption)
+	void set_consumption_per_second(double consumption)
 	{
 		if (consumption >= .0003 && consumption <= .003)
 		{
@@ -161,31 +161,33 @@ public:
 	void get_in()
 	{
 		driver_inside = true;
-		control.panel_thread = thread(&Car::panel, this);
+		control.panel_thread = thread(&Car::panel, this);	//Запускаем метод panel в потоке
 	}
 	void get_out()
 	{
 		if (speed > 20) throw std::exception("You left your car on high speed, you need a doctor.");
 		driver_inside = false;
-		if (control.panel_thread.joinable())control.panel_thread.join();
+		if (control.panel_thread.joinable())control.panel_thread.join();	//Останавливаем поток, отображающий панель приборов
 	}
-	void panel()
+	void panel() const
 	{
 		while (driver_inside)
 		{
 			system("CLS");
-			cout << "Engine is " << (engine.is_started() ? "started" : "stopped") << endl;
-			cout << "Fuel level: " << tank.get_fuel_level() << " liters" << endl;
-			if (tank.get_fuel_level() < MIN_FUEL_LEVEL)cout << "LOW FUEL";
+			cout << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n";
+			cout << "::\t" << (engine.is_started() ? "started\t\t\t\t\t\t::" : "stopped\t\t\t\t\t\t::") << endl;
+			cout << "::\tFuel" << tank.get_fuel_level() << " liters\t\t\t\t\t::";
+			if (tank.get_fuel_level() < MIN_FUEL_LEVEL)cout << "\n::\tLOW FUEL\t\t\t\t\t::";
 			cout << endl;
-			cout << "Engine consumption per second: " << engine.get_consumption_per_second() << endl;
-			cout << "Speed: " << speed << " km/h" << endl;
+			cout << "::\tEngine consumption per second: " << engine.get_consumption_per_second() << "\t\t::";
+			cout << "\n::\tSpeed: " << speed << " km/h\t\t\t\t\t::" << endl;
+			cout << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n";
 			std::this_thread::sleep_for(1s);
 		}
 		system("CLS");
 		cout << "This is your car, press Enter to get in" << endl;
 	}
-	void start()
+	void start()	//Заводит машину
 	{
 		if (driver_inside && tank.get_fuel_level() > 0)
 		{
@@ -193,10 +195,18 @@ public:
 			control.idle_thread = thread(&Car::engine_idle, this);
 		}
 	}
-	void stop()
+	void stop()		//Глушит двигатель
 	{
 		engine.stop();
 		if (control.idle_thread.joinable())control.idle_thread.join();
+	}
+	void engine_idle()	//Расходует бензин на холостом ходу
+	{
+		while (tank.give_fuel(engine.get_consumption_per_second()) && engine.is_started())
+		{
+			std::this_thread::sleep_for(1s);
+		}
+		engine.stop();
 	}
 	void free_wheeling()
 	{
@@ -206,14 +216,6 @@ public:
 			if (speed < 0)speed = 0;
 			this_thread::sleep_for(1s);
 		}
-	}
-	void engine_idle()
-	{
-		while (tank.give_fuel(engine.get_consumption_per_second())&&engine.is_started())
-		{
-			std::this_thread::sleep_for(1s);
-		}
-		engine.stop();
 	}
 	void accelerate()
 	{
@@ -243,12 +245,12 @@ public:
 	}
 	void adjust_consumption()
 	{
-		if (speed > 0 && speed <= 60)engine.set_consumtion_per_second(.002);
-		else if (speed > 60 && speed <= 100)engine.set_consumtion_per_second(.0014);
-		else if (speed > 100 && speed <= 140)engine.set_consumtion_per_second(.002);
-		else if (speed > 140 && speed <= 200)engine.set_consumtion_per_second(.0025);
-		else if (speed > 200)engine.set_consumtion_per_second(.003);
-		else if (speed == 0)engine.set_consumtion_per_second(engine.get_consumption() * 5e-5);
+		if (speed > 0 && speed <= 60)engine.set_consumption_per_second(.002);
+		else if (speed > 60 && speed <= 100)engine.set_consumption_per_second(.0014);
+		else if (speed > 100 && speed <= 140)engine.set_consumption_per_second(.002);
+		else if (speed > 140 && speed <= 200)engine.set_consumption_per_second(.0025);
+		else if (speed > 200)engine.set_consumption_per_second(.003);
+		else if (speed == 0)engine.set_consumption_per_second(engine.get_consumption() * 5e-5);
 	}
 	void control_car()
 	{
@@ -259,23 +261,23 @@ public:
 			//cout << (int)key << "\t" << key << endl;
 			switch (key)
 			{
-			case Enter:
+			case Enter:	//Вход/Выход из машины
 				if (driver_inside)get_out();
 				else get_in();
 				break;
-			case'I':case'i':
-				if (engine.is_started())stop();
-				else start();
-				break;
-			case'F':case'f':
+			case 'F':case 'f'://Fill - заправка
 				double amount;
 				cout << "How much?"; cin >> amount;
 				tank.fill(amount);
 				break;
-			case'W':case'w':case ArrowUp:
+			case 'I':case 'i'://Ignition - зажигание.
+				if (engine.is_started())stop();
+				else start();
+				break;
+			case 'W':case 'w':case ArrowUp://Gas - газ, разгон
 				accelerate();
 				break;
-			case ArrowDown:case Spase:case'S':case's':
+			case 'S':case 's':case ArrowDown:case Space:
 				slow_down();
 				break;
 			case Escape:
@@ -291,8 +293,8 @@ public:
 		cout << endl;
 		engine.info();
 		cout << endl;
-		cout << "Max speed:\t" << MAX_SPEED << " km/h" << endl;
-		cout << "Current speed: " << speed << " km/h" << endl;
+		cout << "Max speed:\t" << MAX_SPEED << " km/h" << endl;;
+		cout << "Current speed: " << speed << " km/h" << endl;;
 	}
 };
 
@@ -328,6 +330,6 @@ void main()
 	}
 	catch (const std::exception& e)
 	{
-		std::ceer << e.what() << endl;
+		std::cerr << e.what() << endl;
 	}
 }
